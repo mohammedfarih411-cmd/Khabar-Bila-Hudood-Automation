@@ -1,0 +1,64 @@
+project:
+  name: "Khabar Bila Hudood Automation"
+  language: "ar"
+  timezone: "Europe/Rome"
+
+news:
+  max_articles: 30
+  publish_per_run: 1
+
+  priority:
+    - italy
+    - immigration
+    - world
+
+  exclude_categories:
+    - economy
+    - finance
+    - stocks
+    - crypto
+
+  duplicate_days: 30
+
+sources:
+  rss:
+    - https://feeds.bbci.co.uk/news/world/rss.xml
+    - https://www.aljazeera.com/xml/rss/all.xml
+    - https://rss.dw.com/xml/rss-en-all
+
+ai:
+  provider: google
+  model: gemini-2.5-pro
+  temperature: 0.7
+
+seo:
+  hashtags: 3
+  max_title_length: 100
+  max_description_length: 4000
+
+thumbnail:
+  width: 1280
+  height: 720
+  format: jpg
+
+video:
+  resolution: "1920x1080"
+  fps: 30
+  format: mp4
+  music_volume: 0.25
+
+youtube:
+  privacy: private
+  category: 25
+  made_for_kids: false
+
+database:
+  path: data/news.db
+
+logging:
+  level: INFO
+  file: logs/app.log
+
+scheduler:
+  enabled: true
+  interval_minutes: 30
