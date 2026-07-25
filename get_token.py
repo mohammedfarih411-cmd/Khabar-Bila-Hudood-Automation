@@ -5,9 +5,10 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 client_config = {
     "installed": {
-        "client_id": "581582198590-i6gm7fko8btt1b8rruf2ne2knvv6824v.apps.googleusercontent.com",
+        "client_id": "581582198590-3i1kvd8v35mmvs99c7jmbqv66l74n093.apps.googleusercontent.com",
 
-        "client_secret": "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",
+
+        "client_secret": "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",
 
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token"
