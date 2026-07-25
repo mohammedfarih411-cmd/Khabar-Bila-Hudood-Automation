@@ -6,7 +6,7 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 client_config = {
     "installed": {
         "client_id": "YOUR_CLIENT_ID",
-        "client_secret": "YOUR_CLIENT_SECRET",
+        "client_secret": "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",
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token"
     }
