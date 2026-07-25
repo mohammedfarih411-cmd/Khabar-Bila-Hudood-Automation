@@ -1,9 +1,6 @@
 name: News Automation
 
 on:
-  push:
-    branches:
-      - develop
   workflow_dispatch:
 
 permissions:
@@ -18,10 +15,10 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
-     - name: Checkout develop branch
-  uses: actions/checkout@v6
-  with:
-    ref: develop
+      - name: Checkout develop branch
+        uses: actions/checkout@v6
+        with:
+          ref: develop
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -34,14 +31,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verify Gemini secret
-        shell: bash
+      - name: Validate Gemini secret
         run: |
-          if [ -z "$GEMINI_API_KEY" ]; then
-            echo "GEMINI_API_KEY is missing"
-            exit 1
-          fi
-          echo "GEMINI_API_KEY is configured"
+          python - <<'PY'
+          import os
+          from google import genai
+
+          key = os.environ.get("GEMINI_API_KEY", "").strip()
+
+          if not key:
+              raise SystemExit("GEMINI_API_KEY is missing")
+
+          client = genai.Client(api_key=key)
+          model = next(iter(client.models.list()))
+
+          print("GEMINI_API_KEY_VALID=True")
+          print("FIRST_MODEL=" + model.name)
+          PY
 
       - name: Run automated tests
         run: python -m unittest discover -s tests -v
