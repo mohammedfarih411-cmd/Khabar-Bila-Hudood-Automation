@@ -18,8 +18,10 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+     - name: Checkout develop branch
+  uses: actions/checkout@v6
+  with:
+    ref: develop
 
       - name: Set up Python
         uses: actions/setup-python@v6
