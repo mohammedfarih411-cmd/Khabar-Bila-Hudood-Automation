@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -11,6 +11,8 @@ from urllib.parse import urlsplit, urlunsplit
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from pathlib import Path
+from ..storage import filter_recent_duplicates
 
 
 LOGGER = logging.getLogger("KhabarBilaHudood.news")
@@ -185,6 +187,35 @@ def _collect_feed(
     return articles
 
 
+def _apply_news_history(
+    articles: list[Article],
+    config: dict,
+) -> list[Article]:
+    """Filter articles previously accepted inside the duplicate window."""
+
+    news_config = config.get("news", {})
+    database_config = config.get("database", {})
+
+    duplicate_days = news_config.get("duplicate_days")
+    database_value = database_config.get("path")
+
+    # Backward compatibility for tests or partial configurations.
+    if duplicate_days is None or database_value is None:
+        return articles
+
+    database_path = Path(str(database_value)).expanduser()
+
+    if not database_path.is_absolute():
+        project_root = Path(__file__).resolve().parents[2]
+        database_path = project_root / database_path
+
+    return filter_recent_duplicates(
+        articles,
+        database_path=database_path,
+        duplicate_days=int(duplicate_days),
+    )
+
+
 def collect_news(
     config: dict[str, Any],
     *,
@@ -282,4 +313,4 @@ def collect_news(
         if not article_added:
             break
 
-    return balanced_articles
+    return _apply_news_history(balanced_articles, config)
