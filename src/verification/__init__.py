@@ -1,5 +1,11 @@
 """Editorial verification and publishing safeguards."""
 
+from .gemini_verifier import (
+    GeminiEditorialVerifier,
+    GeminiEvidenceAssessment,
+    GeminiVerificationAudit,
+    GroundedResearch,
+)
 from .policy import (
     VerificationEvidence,
     VerificationResult,
@@ -9,6 +15,10 @@ from .policy import (
 )
 
 __all__ = [
+    "GeminiEditorialVerifier",
+    "GeminiEvidenceAssessment",
+    "GeminiVerificationAudit",
+    "GroundedResearch",
     "VerificationEvidence",
     "VerificationResult",
     "VerificationStatus",
