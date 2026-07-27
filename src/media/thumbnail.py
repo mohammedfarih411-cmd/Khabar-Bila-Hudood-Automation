@@ -18,6 +18,19 @@ def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
+def _draw_right_aligned_text(
+    draw: ImageDraw.ImageDraw,
+    position: tuple[int, int],
+    text: str,
+    **kwargs,
+) -> None:
+    """Draw RTL text when libraqm exists, with a Windows-safe fallback."""
+    try:
+        draw.text(position, text, anchor="ra", direction="rtl", **kwargs)
+    except (KeyError, ValueError):
+        draw.text(position, text, anchor="ra", **kwargs)
+
+
 def create_thumbnail(
     title: str,
     destination: str | Path,
@@ -42,20 +55,25 @@ def create_thumbnail(
     title_font = _font(max(52, int(height * 0.105)))
     source_font = _font(max(24, int(height * 0.042)))
 
-    draw.text((width - 45, 32), brand, font=brand_font, fill="white", anchor="ra", direction="rtl")
+    _draw_right_aligned_text(
+        draw,
+        (width - 45, 32),
+        brand,
+        font=brand_font,
+        fill="white",
+    )
     normalized = " ".join(title.split())
     lines = textwrap.wrap(normalized, width=22)[:3] or ["خبر عاجل"]
     y = int(height * 0.25)
     for line in lines:
-        draw.text(
+        _draw_right_aligned_text(
+            draw,
             (width - 55, y),
             line,
             font=title_font,
             fill=(255, 210, 55),
             stroke_width=4,
             stroke_fill=(0, 0, 0),
-            anchor="ra",
-            direction="rtl",
         )
         y += int(height * 0.14)
 
