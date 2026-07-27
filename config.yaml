@@ -29,7 +29,7 @@ sources:
 ai:
   enabled: true
   provider: google
-  model: gemini-2.5-pro
+  model: gemini-3.1-pro-preview
   temperature: 0.2
   minimum_confidence: 0.80
 
@@ -39,7 +39,7 @@ seo:
   max_description_length: 4000
 
 production:
-  enabled: false
+  enabled: true
   output_dir: output
 
 tts:
@@ -60,7 +60,7 @@ video:
   music_volume: 0.25
 
 youtube:
-  upload_enabled: false
+  upload_enabled: true
   privacy: private
   category: 25
   made_for_kids: false
