@@ -27,9 +27,11 @@ sources:
     - https://rss.dw.com/xml/rss-en-all
 
 ai:
+  enabled: true
   provider: google
   model: gemini-2.5-pro
-  temperature: 0.7
+  temperature: 0.2
+  minimum_confidence: 0.80
 
 seo:
   hashtags: 3
