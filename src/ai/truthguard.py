@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import os
-from typing import Protocol
+import re
+from typing import Any, Protocol
 
 from google import genai
 
@@ -48,8 +49,32 @@ _RESPONSE_SCHEMA = {
         "tags",
         "hashtags",
     ],
-    "additionalProperties": False,
 }
+
+_MOJIBAKE_MARKERS = ("Ø", "Ù", "Ã", "Â", "â€")
+
+
+def _repair_text(value: Any) -> str:
+    """Return clean Unicode text and repair common UTF-8/Windows mojibake."""
+    text = str(value or "").strip()
+    if not text or not any(marker in text for marker in _MOJIBAKE_MARKERS):
+        return text
+    try:
+        repaired = text.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return text
+    return repaired if repaired else text
+
+
+def _parse_json_response(text: str) -> dict[str, Any]:
+    cleaned = text.strip()
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
 
 
 class GeminiTruthGuard:
@@ -62,9 +87,9 @@ class GeminiTruthGuard:
 
     def verify(self, article: Article) -> EditorialPackage:
         prompt = f"""
-أنت محرر قناة خبر بلا حدود. طبّق سياسة TRUTHGUARD بدقة: الدقة والحياد قبل السرعة.
+أنت محرر قناة «خبر بلا حدود». طبّق سياسة TRUTHGUARD بدقة: الدقة والحياد قبل السرعة.
 لا تعتمد على معلومات خارج النص المقدم، ولا تخترع حقائق. ارفض الخبر عند الغموض الجوهري،
-أو عند وجود صياغة شائعة/غير مؤكدة، أو عندما لا تكفي المادة لصناعة خبر مسؤول.
+أو عند وجود صياغة شائعة أو غير مؤكدة، أو عندما لا تكفي المادة لصناعة خبر مسؤول.
 
 المصدر: {article.source}
 العنوان: {article.title}
@@ -73,8 +98,10 @@ class GeminiTruthGuard:
 الملخص:
 {article.summary}
 
-عند الموافقة: اكتب عنوانًا عربيًا صحفيًا غير مضلل، ونصًا عربيًا محايدًا، ووصف YouTube،
-وكلمات مفتاحية، وثلاثة وسوم كحد أقصى. عند الرفض اترك حقول النشر فارغة واشرح السبب.
+عند الموافقة، اكتب جميع حقول النشر بالعربية الفصحى السليمة فقط:
+عنوانًا صحفيًا غير مضلل، ونص تعليق صوتي عربيًا واضحًا، ووصفًا ليوتيوب،
+وكلمات مفتاحية، وثلاثة وسوم كحد أقصى. لا تستخدم نصًا مشوهًا أو ترميزًا مثل Ø أو Ù.
+عند الرفض اترك حقول النشر فارغة واشرح السبب.
 """.strip()
         response = self.client.models.generate_content(
             model=self.model,
@@ -87,18 +114,26 @@ class GeminiTruthGuard:
         )
         if not response.text:
             raise RuntimeError("Gemini returned an empty response")
-        data = json.loads(response.text)
+        data = _parse_json_response(response.text)
         confidence = max(0.0, min(1.0, float(data["confidence"])))
         approved = bool(data["approved"]) and confidence >= self.minimum_confidence
         return EditorialPackage(
             approved=approved,
             confidence=confidence,
-            reason=str(data["reason"]).strip(),
-            title_ar=str(data["title_ar"]).strip() if approved else "",
-            script_ar=str(data["script_ar"]).strip() if approved else "",
-            description_ar=str(data["description_ar"]).strip() if approved else "",
-            tags=tuple(str(item).strip() for item in data["tags"] if str(item).strip()) if approved else (),
-            hashtags=tuple(str(item).strip() for item in data["hashtags"] if str(item).strip()) if approved else (),
+            reason=_repair_text(data["reason"]),
+            title_ar=_repair_text(data["title_ar"]) if approved else "",
+            script_ar=_repair_text(data["script_ar"]) if approved else "",
+            description_ar=_repair_text(data["description_ar"]) if approved else "",
+            tags=tuple(
+                cleaned
+                for item in data["tags"]
+                if (cleaned := _repair_text(item))
+            ) if approved else (),
+            hashtags=tuple(
+                cleaned
+                for item in data["hashtags"]
+                if (cleaned := _repair_text(item))
+            ) if approved else (),
         )
 
 
