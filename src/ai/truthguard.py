@@ -82,7 +82,7 @@ class GeminiTruthGuard:
             config={
                 "temperature": 0.2,
                 "response_mime_type": "application/json",
-                "response_json_schema": _RESPONSE_SCHEMA,
+                "response_schema": _RESPONSE_SCHEMA,
             },
         )
         if not response.text:
