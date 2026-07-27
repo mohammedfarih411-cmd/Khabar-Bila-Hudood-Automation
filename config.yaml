@@ -60,9 +60,11 @@ video:
   fps: 30
   format: mp4
   music_volume: 0.25
+  zoom_percent: 4.0
+  pan_percent: 35.0
 
 youtube:
-  upload_enabled: false
+  upload_enabled: true
   privacy: private
   category: 25
   made_for_kids: false
