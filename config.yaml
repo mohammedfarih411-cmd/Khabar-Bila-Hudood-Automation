@@ -38,10 +38,20 @@ seo:
   max_title_length: 100
   max_description_length: 4000
 
+production:
+  enabled: false
+  output_dir: output
+
+tts:
+  provider: elevenlabs
+  model: eleven_multilingual_v2
+  timeout_seconds: 120
+
 thumbnail:
   width: 1280
   height: 720
   format: jpg
+  brand: "خبر بلا حدود"
 
 video:
   resolution: "1920x1080"
@@ -50,9 +60,11 @@ video:
   music_volume: 0.25
 
 youtube:
+  upload_enabled: false
   privacy: private
   category: 25
   made_for_kids: false
+  token_path: token.json
 
 database:
   path: data/news.db
