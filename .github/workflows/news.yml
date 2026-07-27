@@ -2,26 +2,24 @@ name: News Automation
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  test-and-run:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
+    timeout-minutes: 15
     steps:
-      - name: Checkout develop branch
-        uses: actions/checkout@v6
-        with:
-          ref: develop
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
@@ -31,26 +29,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Validate Gemini secret
-        run: |
-          python - <<'PY'
-          import os
-          from google import genai
-
-          key = os.environ.get("GEMINI_API_KEY", "").strip()
-
-          if not key:
-              raise SystemExit("GEMINI_API_KEY is missing")
-
-          client = genai.Client(api_key=key)
-          model = next(iter(client.models.list()))
-
-          print("GEMINI_API_KEY_VALID=True")
-          print("FIRST_MODEL=" + model.name)
-          PY
-
       - name: Run automated tests
         run: python -m unittest discover -s tests -v
 
-      - name: Run news automation
+  run-news:
+    if: github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run news selection pipeline
         run: python -m src.main
