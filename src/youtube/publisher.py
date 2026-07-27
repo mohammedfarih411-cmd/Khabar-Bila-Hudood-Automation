@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+LOGGER = logging.getLogger(__name__)
 
 
 def _load_credentials(token_path: str | Path = "token.json") -> Credentials:
@@ -69,8 +72,22 @@ def upload_video(
     while response is None:
         _, response = request.next_chunk()
     video_id = str(response["id"])
-    youtube.thumbnails().set(
-        videoId=video_id,
-        media_body=MediaFileUpload(str(thumbnail_path)),
-    ).execute()
+
+    try:
+        youtube.thumbnails().set(
+            videoId=video_id,
+            media_body=MediaFileUpload(str(thumbnail_path)),
+        ).execute()
+    except HttpError as exc:
+        status = getattr(exc.resp, "status", None)
+        if status in {401, 403}:
+            LOGGER.warning(
+                "Video uploaded, but the custom thumbnail could not be set due to channel permissions | "
+                "video_id=%s | status=%s",
+                video_id,
+                status,
+            )
+        else:
+            raise
+
     return video_id
