@@ -52,6 +52,8 @@ thumbnail:
   height: 720
   format: jpg
   brand: "خبر بلا حدود"
+  # Optional local path. Noto Naskh Arabic and Cairo are preferred automatically.
+  font_path: ""
 
 video:
   resolution: "1920x1080"
@@ -60,7 +62,7 @@ video:
   music_volume: 0.25
 
 youtube:
-  upload_enabled: true
+  upload_enabled: false
   privacy: private
   category: 25
   made_for_kids: false
