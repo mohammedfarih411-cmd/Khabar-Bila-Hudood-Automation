@@ -28,12 +28,12 @@ def _load_credentials(token_path: str | Path = "token.json") -> Credentials:
     return Credentials.from_authorized_user_file(str(path), SCOPES)
 
 
-def build_description(description: str, hashtags: tuple[str, ...], source_url: str) -> str:
+def build_description(description: str, hashtags: tuple[str, ...]) -> str:
+    """Build public YouTube copy without exposing internal source metadata."""
     cleaned_tags = [tag if tag.startswith("#") else f"#{tag}" for tag in hashtags]
     sections = [description.strip()]
     if cleaned_tags:
         sections.append(" ".join(cleaned_tags))
-    sections.append(f"المصدر: {source_url}")
     return "\n\n".join(section for section in sections if section)
 
 
@@ -50,6 +50,7 @@ def upload_video(
     made_for_kids: bool = False,
     token_path: str | Path = "token.json",
 ) -> str:
+    """Upload a private video while keeping source_url internal."""
     credentials = _load_credentials(token_path)
     youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
     request = youtube.videos().insert(
@@ -57,7 +58,7 @@ def upload_video(
         body={
             "snippet": {
                 "title": title[:100],
-                "description": build_description(description, hashtags, source_url)[:5000],
+                "description": build_description(description, hashtags)[:5000],
                 "tags": list(tags)[:15],
                 "categoryId": str(category_id),
             },
