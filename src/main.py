@@ -39,6 +39,7 @@ def main() -> None:
                 produce_and_publish(article, package, config, logger)
             except Exception:
                 logger.exception("Media production failed | title=%s", package.title_ar)
+                raise
         else:
             logger.info("Production is disabled; no media or upload was attempted.")
 
