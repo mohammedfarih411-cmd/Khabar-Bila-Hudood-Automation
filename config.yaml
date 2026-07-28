@@ -34,7 +34,7 @@ ai:
   minimum_confidence: 0.80
 
 seo:
-  hashtags: 3
+  hashtags: 5
   max_title_length: 100
   max_description_length: 4000
 
