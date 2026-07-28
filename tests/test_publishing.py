@@ -7,15 +7,16 @@ from src.youtube.publisher import build_description
 
 
 class PublishingTests(unittest.TestCase):
-    def test_description_includes_hashtags_and_source(self) -> None:
+    def test_description_includes_hashtags_without_source(self) -> None:
         result = build_description(
             "وصف الخبر",
             ("إيطاليا", "هجرة"),
-            "https://example.com/story",
         )
         self.assertIn("#إيطاليا", result)
         self.assertIn("#هجرة", result)
-        self.assertIn("https://example.com/story", result)
+        self.assertNotIn("المصدر", result)
+        self.assertNotIn("http://", result)
+        self.assertNotIn("https://", result)
 
     def test_narrator_requires_secrets(self) -> None:
         with self.assertRaises(ValueError):

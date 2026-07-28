@@ -37,7 +37,7 @@ _RESPONSE_SCHEMA = {
         "script_ar": {"type": "string"},
         "description_ar": {"type": "string"},
         "tags": {"type": "array", "items": {"type": "string"}, "maxItems": 15},
-        "hashtags": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+        "hashtags": {"type": "array", "items": {"type": "string"}, "minItems": 5, "maxItems": 5},
     },
     "required": [
         "approved",
@@ -109,7 +109,7 @@ class GeminiTruthGuard:
 - لا تضع نقطة في نهاية العنوان، ولا تكرر الكلمات.
 
 اكتب script_ar كنص تعليق صوتي عربي فصيح وسلس، بجمل قصيرة قابلة للنطق الطبيعي.
-واكتب وصفًا عربيًا ليوتيوب، وكلمات مفتاحية عربية، وثلاثة وسوم كحد أقصى.
+واكتب وصفًا عربيًا ليوتيوب، وكلمات مفتاحية عربية، وخمسة وسوم هاشتاغ عربية مرتبطة مباشرة بالخبر، دون تكرار.
 لا تستخدم نصًا مشوهًا أو ترميزًا مثل Ø أو Ù.
 عند الرفض اترك حقول النشر فارغة واشرح السبب.
 """.strip()

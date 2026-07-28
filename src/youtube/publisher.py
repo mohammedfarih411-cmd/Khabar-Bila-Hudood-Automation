@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -28,12 +29,53 @@ def _load_credentials(token_path: str | Path = "token.json") -> Credentials:
     return Credentials.from_authorized_user_file(str(path), SCOPES)
 
 
-def build_description(description: str, hashtags: tuple[str, ...], source_url: str) -> str:
-    cleaned_tags = [tag if tag.startswith("#") else f"#{tag}" for tag in hashtags]
+def _clean_hashtags(hashtags: tuple[str, ...], limit: int) -> tuple[str, ...]:
+    """Normalize and deduplicate hashtags while preserving their order."""
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for value in hashtags:
+        body = re.sub(r"\s+", "_", str(value).strip().lstrip("#"))
+        if not body:
+            continue
+        hashtag = f"#{body}"
+        key = hashtag.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(hashtag)
+        if len(cleaned) == limit:
+            break
+    return tuple(cleaned)
+
+
+def _truncate_at_word(value: str, limit: int) -> str:
+    """Fit text within a character limit without cutting a final word when possible."""
+    text = value.strip()
+    if len(text) <= limit:
+        return text
+    candidate = text[: limit + 1].rsplit(" ", 1)[0].rstrip(" -–—،,:")
+    return candidate or text[:limit].rstrip()
+
+
+def build_title(title: str, hashtags: tuple[str, ...], max_length: int = 100) -> str:
+    """Append three hashtags to a YouTube title while respecting its size limit."""
+    title_tags = _clean_hashtags(hashtags, 3)
+    suffix = " ".join(title_tags)
+    if not suffix:
+        return _truncate_at_word(title, max_length)
+    available = max_length - len(suffix) - 1
+    if available <= 0:
+        return suffix[:max_length].rstrip()
+    base = _truncate_at_word(title, available)
+    return f"{base} {suffix}".strip()
+
+
+def build_description(description: str, hashtags: tuple[str, ...]) -> str:
+    """Build public copy with five hashtags and no internal source metadata."""
+    description_tags = _clean_hashtags(hashtags, 5)
     sections = [description.strip()]
-    if cleaned_tags:
-        sections.append(" ".join(cleaned_tags))
-    sections.append(f"المصدر: {source_url}")
+    if description_tags:
+        sections.append(" ".join(description_tags))
     return "\n\n".join(section for section in sections if section)
 
 
@@ -50,14 +92,15 @@ def upload_video(
     made_for_kids: bool = False,
     token_path: str | Path = "token.json",
 ) -> str:
+    """Upload a private video while keeping source_url internal."""
     credentials = _load_credentials(token_path)
     youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
     request = youtube.videos().insert(
         part="snippet,status",
         body={
             "snippet": {
-                "title": title[:100],
-                "description": build_description(description, hashtags, source_url)[:5000],
+                "title": build_title(title, hashtags),
+                "description": build_description(description, hashtags)[:5000],
                 "tags": list(tags)[:15],
                 "categoryId": str(category_id),
             },
