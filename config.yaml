@@ -25,6 +25,7 @@ sources:
     - https://feeds.bbci.co.uk/news/world/rss.xml
     - https://www.aljazeera.com/xml/rss/all.xml
     - https://rss.dw.com/xml/rss-en-all
+    - https://www.ansa.it/english/english_rss.xml
 
 ai:
   enabled: true
