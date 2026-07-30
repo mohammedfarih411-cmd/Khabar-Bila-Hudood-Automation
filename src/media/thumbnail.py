@@ -48,6 +48,31 @@ def _text_width(
     """Return the rendered width of a text fragment."""
     box = draw.textbbox((0, 0), text, font=font)
     return box[2] - box[0]
+def _text_bottom(
+    draw: ImageDraw.ImageDraw,
+    position: tuple[int, int],
+    text: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    stroke_width: int = 0,
+) -> int:
+    """Return the lowest pixel of a right-anchored line, descenders included."""
+    try:
+        box = draw.textbbox(
+            position,
+            text,
+            font=font,
+            anchor="ra",
+            direction="rtl",
+            stroke_width=stroke_width,
+        )
+    except (KeyError, ValueError):
+        box = draw.textbbox(
+            position, text, font=font, anchor="ra", stroke_width=stroke_width
+        )
+    return box[3]
+
+
+
 
 
 def _balanced_lines(
@@ -186,7 +211,11 @@ def create_thumbnail(
         )
         if index == len(lines) - 1:
             line_width = _text_width(draw, line, headline_font)
-            underline_y = y + int(line_height * 0.78)
+            stroke_width = max(3, int(height * 0.007))
+            text_bottom = _text_bottom(
+                draw, (int(width * 0.90), y), line, headline_font, stroke_width
+            )
+            underline_y = text_bottom + max(10, int(height * 0.02))
             draw.rounded_rectangle(
                 (
                     int(width * 0.90) - min(line_width, int(width * 0.72)),
