@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from itertools import zip_longest
 import logging
 from typing import Iterable
 
@@ -42,27 +43,47 @@ def _fetch_feed(url: str):
     return feedparser.parse(response.content)
 
 
+def _article_from_entry(source: str, entry: object) -> Article | None:
+    title = str(getattr(entry, "title", "")).strip()
+    link = str(getattr(entry, "link", "")).strip()
+    if not title or not link:
+        return None
+    return Article(
+        title=title,
+        url=link,
+        source=str(source),
+        summary=str(getattr(entry, "summary", "")).strip(),
+        published_at=_published(entry),
+    )
+
+
 def collect_rss(urls: Iterable[str], max_articles: int = 30) -> list[Article]:
-    articles: list[Article] = []
+    """Collect articles from every configured RSS source, round-robin style.
+
+    Sources are drained in turn (one entry per source per round) rather than
+    fully draining the first sources before moving on. This guarantees a
+    smaller or later-listed source (e.g. a dedicated Italy feed) still gets a
+    fair share of the max_articles budget instead of being starved out by
+    larger feeds listed earlier.
+    """
+    sources: list[str] = []
+    entries_per_source: list[list[object]] = []
     for url in urls:
         feed = _fetch_feed(url)
         if feed is None:
             continue
-        source = getattr(feed.feed, "title", None) or url
-        for entry in getattr(feed, "entries", []):
-            title = str(getattr(entry, "title", "")).strip()
-            link = str(getattr(entry, "link", "")).strip()
-            if not title or not link:
+        sources.append(str(getattr(feed.feed, "title", None) or url))
+        entries_per_source.append(list(getattr(feed, "entries", [])))
+
+    articles: list[Article] = []
+    for round_entries in zip_longest(*entries_per_source):
+        for source, entry in zip(sources, round_entries):
+            if entry is None:
                 continue
-            articles.append(
-                Article(
-                    title=title,
-                    url=link,
-                    source=str(source),
-                    summary=str(getattr(entry, "summary", "")).strip(),
-                    published_at=_published(entry),
-                )
-            )
+            article = _article_from_entry(source, entry)
+            if article is None:
+                continue
+            articles.append(article)
             if len(articles) >= max_articles:
                 return articles
     return articles
