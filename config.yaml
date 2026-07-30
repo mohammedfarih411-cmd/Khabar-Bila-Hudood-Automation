@@ -5,7 +5,7 @@ project:
 
 news:
   max_articles: 30
-  publish_per_run: 1
+  publish_per_run: 5
 
   priority:
     - italy
