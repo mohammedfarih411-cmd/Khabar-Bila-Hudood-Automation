@@ -5,10 +5,10 @@ import unittest
 class WorkflowConfigurationTests(unittest.TestCase):
     """Guard the automatic production wiring in GitHub Actions."""
 
-    def test_news_workflow_runs_every_thirty_minutes(self) -> None:
+    def test_news_workflow_runs_twice_daily(self) -> None:
         workflow = Path(".github/workflows/news.yml").read_text(encoding="utf-8")
 
-        self.assertIn('cron: "*/30 * * * *"', workflow)
+        self.assertIn('cron: "0 6,18 * * *"', workflow)
         self.assertIn("github.event_name == 'schedule'", workflow)
 
     def test_news_workflow_wires_required_secrets_and_database_cache(self) -> None:
