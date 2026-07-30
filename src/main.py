@@ -23,7 +23,7 @@ def main() -> None:
         logger.warning("No verified new article was selected in this run.")
         return
 
-    production_enabled = bool(config.get("production", {}).get("enabled", False))
+    ready_articles = []
     for article in result.selected:
         package = result.editorial.get(article.fingerprint)
         if not package:
@@ -34,14 +34,24 @@ def main() -> None:
             len(package.tags),
             len(package.hashtags),
         )
-        if production_enabled:
-            try:
-                produce_and_publish(article, package, config, logger)
-            except Exception:
-                logger.exception("Media production failed | title=%s", package.title_ar)
-                raise
-        else:
-            logger.info("Production is disabled; no media or upload was attempted.")
+        ready_articles.append(article)
+
+    if not ready_articles:
+        logger.warning("No editorial package was ready for production.")
+        return
+
+    production_enabled = bool(config.get("production", {}).get("enabled", False))
+    if not production_enabled:
+        logger.info("Production is disabled; no media or upload was attempted.")
+        return
+
+    try:
+        produce_and_publish(ready_articles, result.editorial, config, logger)
+    except Exception:
+        logger.exception(
+            "Media production failed | article_count=%d", len(ready_articles)
+        )
+        raise
 
 
 if __name__ == "__main__":
